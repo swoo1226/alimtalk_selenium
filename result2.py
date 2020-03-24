@@ -86,11 +86,13 @@ time.sleep(2)
 # requestBody = {"UGRP_NM":"","USER_NM":"","TPL_CD":"","TPL_NM":"","REQ_DTS_ST":"20170320","REQ_DTS_END":"20200320","APRV_FG":"","SENDER_KEY":"165821b5cb4350b2644d90ff2328ee8e13bfd932"}
 # 4. 알림톡 템플릿 검수 현황 parsing
 fromDate = driver.find_element_by_id("datefield-1066-inputEl")
-fromDate.click()
+fromDatePicker = driver.find_element_by_id("datefield-1066-trigger-picker")
 driver.execute_script(f"arguments[0].value = '{sys.argv[1]}'", fromDate)
 if len(sys.argv) > 2:
+    print('has end date')
     toDate = driver.find_element_by_id("datefield-1068-inputEl")
     driver.execute_script(f"arguments[0].value = '{sys.argv[2]}'", toDate)
+time.sleep(1)
 search = driver.find_element_by_id("button-1084")
 search.click()
 time.sleep(1)
