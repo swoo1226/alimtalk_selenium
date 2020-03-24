@@ -14,7 +14,7 @@ import os
 from selenium.webdriver.common.alert import Alert
 from openpyxl import Workbook
 wb = Workbook()
-ws = wb.active
+
 # absolute_file_path = os.path.abspath("upload.xlsx")
 options = Options()
 options.headless = True
@@ -110,15 +110,18 @@ def getTableElements():
 html = driver.page_source
 html_doc = parse_content(html)
 tables = html_doc.find_all("table")[1:]
-tableMatrix = []
+tableMatrix_unauthorized = []
+tableMatrix_authorized = []
 # print(tables)
 for tableIdx, table in enumerate(tables):
     # Here you can do whatever you want with the data! You can findAll table row headers, etc...
     # print('table---------', table)
-    list_of_rows = []
+    list_of_rows_unauthorized = []
+    list_of_rows_authorized = []
     for rowIdx, row in enumerate(table.findAll('tr')):
         tableElements = getTableElements()
-        list_of_cells = []
+        list_of_cells_unauthorized = []
+        list_of_cells_authorized = []
         # print(row)
         # print('--------------------------')
         currRow = row.findAll('td')
@@ -127,19 +130,19 @@ for tableIdx, table in enumerate(tables):
         if(status):
             status = status[0]
         if(len(currRow)):
-            if(status.text == '반려' or status.text == '등록'):
+            if(status.text != '승인'):
                 print('검수 미완료 템플릿 발견! 엑셀에 기록할 필요!')
                 # 검수 상태는 tr에서 찾은 td들 중 1번째 인덱스 내의 div의 값
 
                 hasNotConfirmed = True
                 for cell in currRow:
                     text = cell.findAll('div')[0].text
-                    list_of_cells.append(text)
+                    list_of_cells_unauthorized.append(text)
                     # 승인 안 된 템플릿 내용을 보기 위하여 팝업 띄우기까지 완료 상태
                     # 반려된 경우에 어떻게 나타나는지 html 구조가 필요함
                     # print(text)
-                print('tableIdx?', tableIdx)
-                print('list_of_celss', list_of_cells)
+                # print('tableIdx?', tableIdx)
+                # print('list_of_celss', list_of_cells)
                 currRow[1].findAll('')
                 open_popup(tableElements[tableIdx])
                 # currTable = tableElements[tableIdx]
@@ -158,29 +161,80 @@ for tableIdx, table in enumerate(tables):
                 # print('popupTable?????', popupTable)
                 popupTable = popupTables.find_elements_by_tag_name(
                     'tr')[0].find_elements_by_tag_name('td')
-                print('popupTable???????', popupTable[-1].text)
-                list_of_cells.append(popupTable[-1].text)
+                # print('popupTable???????', popupTable[-1].text)
+                list_of_cells_unauthorized.append(popupTable[-1].text)
                 close = driver.find_elements_by_class_name(
                     'x-tool-close')[0]
                 close.click()
-                list_of_rows.append(list_of_cells)
-    if(list_of_rows):
-        tableMatrix.append(list_of_rows)
+                list_of_rows_unauthorized.append(list_of_cells_unauthorized)
+            else:
+                print('승인된 템플릿들')
+                for cell in currRow:
+                    text = cell.findAll('div')[0].text
+                    list_of_cells_authorized.append(text)
+                currRow[1].findAll('')
+                # open_popup(tableElements[tableIdx])
+                # time.sleep(1)
+                # pageSource = driver.page_source
+                # pageSource_doc = parse_content(pageSource)
+                # xFieldsetBodyInputs = pageSource_doc.find_all(
+                #     'div', {'class': 'x-fieldset-body'})[0].find_all('input')
+                # print('xFieldsetBodyInputs!!!!!!!!!!', xFieldsetBodyInputs)
+                # # inputValues = xFieldsetBody .find_all('input')
+                # list_of_cells_authorized.append()
+                # close = driver.find_elements_by_class_name(
+                #     'x-tool-close')[0]
+                # close.click()
+                list_of_rows_authorized.append(list_of_cells_authorized)
+
+    if(list_of_rows_unauthorized):
+        tableMatrix_unauthorized.append(list_of_rows_unauthorized)
+    if(list_of_rows_authorized):
+        tableMatrix_authorized.append(list_of_rows_authorized)
 
 # print(tableMatrix)
+
+ws = wb.active
+ws.title = '승인'
+ws['A1'] = '순번'
+ws['B1'] = '검수상태'
+ws['C1'] = '템플릿코드'
+ws['D1'] = '템플릿명'
+ws['E1'] = '메세지내용'
+ws['F1'] = '그룹'
+ws['G1'] = '등록자'
+ws['H1'] = '등록일'
+ws['I1'] = '최종변경일'
+ws['J1'] = '비고'
+authorized_data = []
+for rowIndex, rows in enumerate(tableMatrix_authorized):
+    for row in rows:
+        print('row???', row)
+        ws.append(row)
+        authorized_data.append({
+            "order": row[0],
+            "template_code": row[2],
+            "template_name": row[3],
+            "template": row[4],
+        })
+print(authorized_data)
+with open("authorized.json", "w", encoding='UTF-8') as json_file:
+    json.dump(authorized_data, json_file)
 if(hasNotConfirmed):
     print('승인 안 된 템플릿 존재!')
-    ws['A1'] = '순번'
-    ws['B1'] = '검수상태'
-    ws['C1'] = '템플릿코드'
-    ws['D1'] = '템플릿명'
-    ws['E1'] = '메세지내용'
-    ws['F1'] = '그룹'
-    ws['G1'] = '등록자'
-    ws['H1'] = '등록일'
-    ws['I1'] = '최종변경일'
-    ws['J1'] = '비고'
-    for rowIndex, rows in enumerate(tableMatrix):
+    ws2 = wb.create_sheet()
+    ws2.title = '미승인'
+    ws2['A1'] = '순번'
+    ws2['B1'] = '검수상태'
+    ws2['C1'] = '템플릿코드'
+    ws2['D1'] = '템플릿명'
+    ws2['E1'] = '메세지내용'
+    ws2['F1'] = '그룹'
+    ws2['G1'] = '등록자'
+    ws2['H1'] = '등록일'
+    ws2['I1'] = '최종변경일'
+    ws2['J1'] = '비고'
+    for rowIndex, rows in enumerate(tableMatrix_unauthorized):
         for row in rows:
-            ws.append(row)
-    wb.save('result.xlsx')
+            ws2.append(row)
+wb.save('result.xlsx')
