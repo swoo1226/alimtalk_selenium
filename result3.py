@@ -219,7 +219,7 @@ for rowIndex, rows in enumerate(tableMatrix_authorized):
         })
 print(authorized_data)
 with open("authorized.json", "w", encoding='UTF-8') as json_file:
-    json.dump(authorized_data, json_file)
+    json_file.write(json.dumps(authorized_data, ensure_ascii=False))
 if(hasNotConfirmed):
     print('승인 안 된 템플릿 존재!')
     ws2 = wb.create_sheet()
