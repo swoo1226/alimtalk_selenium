@@ -92,21 +92,23 @@ fromDatePicker = driver.find_element_by_id("datefield-1066-trigger-picker")
 fromDatePickerHeader = driver.find_elements_by_class_name(
     "x-datepicker-header")
 
-driver.execute_script(f"arguments[0].value = '{sys.argv[1]}'", fromDate)
-if len(sys.argv) > 2:
-    print('has end date')
-    toDate = driver.find_element_by_id("datefield-1068-inputEl")
-    driver.execute_script(f"arguments[0].value = '{sys.argv[2]}'", toDate)
+# driver.execute_script(f"arguments[0].value = '{sys.argv[1]}'", fromDate)
+# if len(sys.argv) > 2:
+#     print('has end date')
+#     toDate = driver.find_element_by_id("datefield-1068-inputEl")
+#     driver.execute_script(f"arguments[0].value = '{sys.argv[2]}'", toDate)
 
-search = driver.find_element_by_id("button-1084")
-search.click()
-time.sleep(1)
+# search = driver.find_element_by_id("button-1084")
+# search.click()
+# time.sleep(1)
 
 
 def getTableElements():
     return driver.find_elements_by_tag_name('table')[1:]
 
 
+# 검수요청 버튼
+requestConfirm = driver.find_element_by_id('button-1093')
 html = driver.page_source
 html_doc = parse_content(html)
 tables = html_doc.find_all("table")[1:]
@@ -134,38 +136,51 @@ for tableIdx, table in enumerate(tables):
                 print('검수 미완료 템플릿 발견! 엑셀에 기록할 필요!')
                 # 검수 상태는 tr에서 찾은 td들 중 1번째 인덱스 내의 div의 값
 
-                hasNotConfirmed = True
-                for cell in currRow:
-                    text = cell.findAll('div')[0].text
-                    list_of_cells_unauthorized.append(text)
-                    # 승인 안 된 템플릿 내용을 보기 위하여 팝업 띄우기까지 완료 상태
-                    # 반려된 경우에 어떻게 나타나는지 html 구조가 필요함
-                    # print(text)
+                # 승인 안 된 템플릿 내용을 보기 위하여 팝업 띄우기까지 완료 상태
+                # 반려된 경우에 어떻게 나타나는지 html 구조가 필요함
+                # print(text)
                 # print('tableIdx?', tableIdx)
                 # print('list_of_celss', list_of_cells)
                 currRow[1].findAll('')
-                open_popup(tableElements[tableIdx])
-                # currTable = tableElements[tableIdx]
-                # print('currTable--------------', currTable)
-                # time.sleep(10)
+                if(status.text == '등록'):
+                    tableElements[tableIdx].click()
+                    requestConfirm.click()
+                    check1 = driver.find_element_by_id('button-1006')
+                    check1.click()
+                    time.sleep(1)
+                    check2 = driver.find_element_by_id('button-1005')
+                    check2.click()
+                    hasNotConfirmed = True
+                    for cell in currRow:
+                        text = cell.findAll('div')[0].text
+                        list_of_cells_unauthorized.append(text)
+                    list_of_cells_unauthorized[1] = '검수요청'
+                else:
+                    for cell in currRow:
+                        text = cell.findAll('div')[0].text
+                        list_of_cells_unauthorized.append(text)
+                    open_popup(tableElements[tableIdx])
+                    # currTable = tableElements[tableIdx]
+                    # print('currTable--------------', currTable)
+                    # time.sleep(10)
 
-                time.sleep(1)
-                # popupSource = driver.page_source
-                # popupSource_doc = parse_content(popupSource)
-                # xLayers = popupSource_doc.find_all('div', {'class': 'x-layer'})
-                # print(xLayers)
-                xLayers = driver.find_elements_by_class_name('x-layer')
-                # popupTable = xLayers[len(xLayers) - 1].find_all('table')[-2]
-                popupTables = xLayers[len(
-                    xLayers) - 1].find_elements_by_tag_name('table')[-2]
-                # print('popupTable?????', popupTable)
-                popupTable = popupTables.find_elements_by_tag_name(
-                    'tr')[0].find_elements_by_tag_name('td')
-                # print('popupTable???????', popupTable[-1].text)
-                list_of_cells_unauthorized.append(popupTable[-1].text)
-                close = driver.find_elements_by_class_name(
-                    'x-tool-close')[0]
-                close.click()
+                    time.sleep(1)
+                    # popupSource = driver.page_source
+                    # popupSource_doc = parse_content(popupSource)
+                    # xLayers = popupSource_doc.find_all('div', {'class': 'x-layer'})
+                    # print(xLayers)
+                    xLayers = driver.find_elements_by_class_name('x-layer')
+                    # popupTable = xLayers[len(xLayers) - 1].find_all('table')[-2]
+                    popupTables = xLayers[len(
+                        xLayers) - 1].find_elements_by_tag_name('table')[-2]
+                    # print('popupTable?????', popupTable)
+                    popupTable = popupTables.find_elements_by_tag_name(
+                        'tr')[0].find_elements_by_tag_name('td')
+                    # print('popupTable???????', popupTable[-1].text)
+                    list_of_cells_unauthorized.append(popupTable[-1].text)
+                    close = driver.find_elements_by_class_name(
+                        'x-tool-close')[0]
+                    close.click()
                 list_of_rows_unauthorized.append(list_of_cells_unauthorized)
             else:
                 print('승인된 템플릿들')
@@ -173,18 +188,6 @@ for tableIdx, table in enumerate(tables):
                     text = cell.findAll('div')[0].text
                     list_of_cells_authorized.append(text)
                 currRow[1].findAll('')
-                # open_popup(tableElements[tableIdx])
-                # time.sleep(1)
-                # pageSource = driver.page_source
-                # pageSource_doc = parse_content(pageSource)
-                # xFieldsetBodyInputs = pageSource_doc.find_all(
-                #     'div', {'class': 'x-fieldset-body'})[0].find_all('input')
-                # print('xFieldsetBodyInputs!!!!!!!!!!', xFieldsetBodyInputs)
-                # # inputValues = xFieldsetBody .find_all('input')
-                # list_of_cells_authorized.append()
-                # close = driver.find_elements_by_class_name(
-                #     'x-tool-close')[0]
-                # close.click()
                 list_of_rows_authorized.append(list_of_cells_authorized)
 
     if(list_of_rows_unauthorized):
